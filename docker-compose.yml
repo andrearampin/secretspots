@@ -1,0 +1,23 @@
+version: '3'
+services:
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./back:/go/src/app
+    environment:
+      GO111MODULE: "on"
+      DB_USER: "postgres"
+      DB_PWD: "postgres"
+      DB_HOST: "db"
+      DB_PORT: "5432"
+      DB_NAME: "secretspots"
+  db:
+    image: postgres
+    ports:
+      - "5430:5432"
+    volumes:
+      - ./tmp/db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: postgres
