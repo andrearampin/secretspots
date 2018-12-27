@@ -63,7 +63,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	var id int
 	err = db.QueryRow(
-		"SELECT id FROM users WHERE email=$1 and password=$2",
+		"SELECT id FROM users WHERE email=$1 and password=crypt($2, password);",
 		creds.Email,
 		creds.Password,
 	).Scan(&id)
