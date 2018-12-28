@@ -26,8 +26,18 @@ func errorHandler(w http.ResponseWriter, message string) {
 	w.Write(response)
 }
 
+func setHeaders(w http.ResponseWriter) {
+  w.Header().Set("Content-Type", "application/json")
+  w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
+  w.Header().Set("Access-Control-Allow-Origin", "*")
+  w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+}
+
 func loginHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+  setHeaders(w)
+  if r.Method == http.MethodOptions {
+    return
+  }
 	if r.Method != http.MethodPost {
 		errorHandler(w, "Must be POST")
 		return
