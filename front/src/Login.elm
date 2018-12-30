@@ -8,59 +8,57 @@ import Json.Encode as Encode
 
 
 main =
-  Browser.element
-    { init = init
-    , view = view
-    , update = update
-    , subscriptions = subscriptions
-    }
+    Browser.element
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = subscriptions
+        }
 
 
 type alias Model =
-  { email : String
-  , password : String
-  }
+    { email : String
+    , password : String
+    , id : Maybe Int
+    }
 
 
-init : () -> (Model, Cmd Msg)
+init : () -> ( Model, Cmd Msg )
 init _ =
-  (Model "" "", Cmd.none)
+    ( { email = "", password = "", id = Nothing }, Cmd.none )
+
 
 
 -- UPDATE
 
 
 type Msg
-  = Noop
-  | Email String
-  | Password String
-  | Submit
-  | Success
-  | Failure
-  | Authenticated (Result Http.Error String)
+    = SetEmail String
+    | SetPassword String
+    | Submit
+    | Remote (Result Http.Error String)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-  case msg of
-    Noop ->
-      (model, Cmd.none)
-    Email email ->
-      ({ model | email = email }, Cmd.none)
-    Password password ->
-      ({ model | password = password }, Cmd.none)
-    Submit ->
-      (model, remoteLogin model)
-    Failure ->
-      (model, Cmd.none)
-    Success ->
-      (model, Cmd.none)
-    Authenticated result ->
-      case result of
-        Ok _ ->
-          (model, Cmd.none)
-        Err _ ->
-          (model, Cmd.none)
+    case msg of
+        SetEmail email ->
+            ( { model | email = email }, Cmd.none )
+
+        SetPassword password ->
+            ( { model | password = password }, Cmd.none )
+
+        Submit ->
+            ( model, remoteLogin model )
+
+        Remote result ->
+            case result of
+                Ok value ->
+                    ( { model | id = String.toInt value }, Cmd.none )
+
+                Err _ ->
+                    ( model, Cmd.none )
+
 
 
 -- VIEW
@@ -68,16 +66,27 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-  div []
-    [ viewInput "text" "Email" model.email Email
-    , viewInput "password" "Password" model.password Password
-    , button [ onClick Submit ] [ text "Login" ]
-    ]
+    div []
+        [ viewInput "text" "Email" model.email SetEmail
+        , viewInput "password" "Password" model.password SetPassword
+        , button [ onClick Submit ] [ text "Login" ]
+        , text (viewUserId model)
+        ]
 
 
 viewInput : String -> String -> String -> (String -> msg) -> Html msg
 viewInput t p v toMsg =
-  input [ type_ t, placeholder p, value v, onInput toMsg ] []
+    input [ type_ t, placeholder p, value v, onInput toMsg ] []
+
+
+viewUserId : Model -> String
+viewUserId model =
+  case model.id of
+    Nothing ->
+      "Hello"
+
+    Just id ->
+      String.fromInt id
 
 
 -- SUBSCRIPTIONS
@@ -85,17 +94,21 @@ viewInput t p v toMsg =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Sub.none
+    Sub.none
+
 
 
 -- HTTP
+
+
 remoteLogin : Model -> Cmd Msg
 remoteLogin model =
-  Http.post
-    { url = "http://localhost:3000/login"
-    , body = credsEncoder model |> Http.jsonBody
-    , expect = Http.expectJson Authenticated userDecoder
-    }
+    Http.post
+        { url = "http://localhost:3000/login"
+        , body = credsEncoder model |> Http.jsonBody
+        , expect = Http.expectJson Remote userDecoder
+        }
+
 
 credsEncoder : Model -> Encode.Value
 credsEncoder model =
@@ -105,8 +118,9 @@ credsEncoder model =
             , ( "password", Encode.string model.password )
             ]
     in
-        Encode.object attributes
+    Encode.object attributes
+
 
 userDecoder : Decoder String
 userDecoder =
-  field "user_id" string
+    field "user_id" string
