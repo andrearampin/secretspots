@@ -1,9 +1,11 @@
+module Main exposing (..)
+
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
 import Http exposing (..)
-import Json.Decode exposing (Decoder, field, string)
+import Json.Decode exposing (Decoder, field, int)
 import Json.Encode as Encode
 
 
@@ -36,7 +38,7 @@ type Msg
     = SetEmail String
     | SetPassword String
     | Submit
-    | Remote (Result Http.Error String)
+    | Remote (Result Http.Error Int)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -54,10 +56,10 @@ update msg model =
         Remote result ->
             case result of
                 Ok value ->
-                    ( { model | id = String.toInt value }, Cmd.none )
+                    ( { model | id = Just value }, Cmd.none )
 
                 Err _ ->
-                    ( model, Cmd.none )
+                    ( { model | id = Nothing }, Cmd.none )
 
 
 
@@ -81,12 +83,13 @@ viewInput t p v toMsg =
 
 viewUserId : Model -> String
 viewUserId model =
-  case model.id of
-    Nothing ->
-      "Hello"
+    case model.id of
+        Nothing ->
+            ""
 
-    Just id ->
-      String.fromInt id
+        Just id ->
+            String.fromInt id
+
 
 
 -- SUBSCRIPTIONS
@@ -121,6 +124,6 @@ credsEncoder model =
     Encode.object attributes
 
 
-userDecoder : Decoder String
+userDecoder : Decoder Int
 userDecoder =
-    field "user_id" string
+    field "user_id" int
